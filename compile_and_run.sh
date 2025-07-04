@@ -17,10 +17,10 @@ if [ ! -d build/ ]; then
 fi
 
 # Assemble program into machine code
-nasm $program.asm -f elf64 -o build/$program.o
+nasm $program.asm -f elf64 -o build/$program.o || exit 1
 
 # Link the program using gcc
-gcc build/$program.o -o build/$program -nostdlib -static
+gcc build/$program.o -o build/$program -nostdlib -static || exit 1
 
 # Run the program
 ./build/$program
