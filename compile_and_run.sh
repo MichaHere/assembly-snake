@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Constants
+program="hello64"
+requirements=("gcc" "nasm")
+
+# Check if all commands exist
+for requirement in ${requirements[@]}; do
+    if command -v $requirement &> /dev/null; then continue; fi
+
+    echo "fatal: $requirement is not installed"
+    exit 1
+done
+
+if [ ! -d build/ ]; then
+    mkdir build
+fi
+
+# Assemble program into machine code
+nasm $program.asm -f elf64 -o build/$program.o
+
+# Link the program using gcc
+gcc build/$program.o -o build/$program -nostdlib -static
+
+# Run the program
+./build/$program
