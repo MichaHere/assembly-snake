@@ -12,11 +12,34 @@ section .text
 global _start
 
 _start:
-    call        print                           ; call the function
+    call        print
 
     mov         rax, 60                         ; call sys_exit
     mov         rdi, 0                          ; error code 0
     syscall                                     ; call kernel
+
+
+print_hello:
+    push        rbp                             ; save rbp on the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    sub         rsp, 16                         ; reserve 16 bytes on the stack
+    mov         BYTE [rsp + 0], 'h'
+    mov         BYTE [rsp + 1], 'e'
+    mov         BYTE [rsp + 2], 'l'
+    mov         BYTE [rsp + 3], 'l'
+    mov         BYTE [rsp + 4], 'o'
+    mov         BYTE [rsp + 5], 10
+
+    mov         rax, 1                          ; set call to sys_write
+    mov         rdi, 1                          ; set the file descriptor to std_out
+    lea         rsi, [rsp]                      ; load address of the string to the rsi register
+    mov         rdx, 6                          ; set the length of the string
+    syscall
+
+    add         rsp, 16                         ; restore the stack
+    pop         rbp                             ; retore base pointer
+    ret                                         ; return from function
 
 print:
     push        rbp                             ; save rbp on the stack
@@ -29,6 +52,6 @@ print:
     syscall                                     ; call the kernel
 
     mov         rax, 0                          ; set return code
-
+    
     pop         rbp                             ; retore base pointer
     ret                                         ; return from the function
