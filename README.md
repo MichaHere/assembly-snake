@@ -15,6 +15,7 @@ To run the program you can run the `compile_and_run.sh` script
 
 or you can compile it manually using the following commands
 
+    mkdir build
     nasm window.asm -f elf64 -o build/hwindowello64.o
     gcc build/window.o -o build/window -nostdlib -static
     ./build/window
