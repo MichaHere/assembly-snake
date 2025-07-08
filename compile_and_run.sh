@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Constants
-program="hello64"
+program="window"
 requirements=("gcc" "nasm")
 
 # Check if all commands exist
