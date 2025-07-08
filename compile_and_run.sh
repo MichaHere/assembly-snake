@@ -2,7 +2,7 @@
 
 # Constants
 
-program="hello64"
+program="window"
 run_prefix="./build/"
 requirements=("gcc" "nasm")
 
