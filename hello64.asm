@@ -12,14 +12,16 @@ section .text
 global _start
 
 _start:
-    call        _print                          ; call the _print function
+    call        print                           ; call the function
 
     mov         rax, 60                         ; call sys_exit
     mov         rdi, 0                          ; error code 0
     syscall                                     ; call kernel
 
+print:
+    push        rbp                             ; save rbp on the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
 
-_print:
     mov         rax, 1                          ; call sys_write
     mov         rdi, 1                          ; set the file descriptor to std_out
     mov         rsi, message                    ; set the message buffer
@@ -27,4 +29,6 @@ _print:
     syscall                                     ; call the kernel
 
     mov         rax, 0                          ; set return code
+
+    pop         rbp                             ; retore base pointer
     ret                                         ; return from the function
