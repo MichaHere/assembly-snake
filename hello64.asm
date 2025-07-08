@@ -1,3 +1,13 @@
+BITS 64                                         ; use 64 bits
+CPU X64                                         ; target x86_64 CPU family
+
+
+section .data
+
+message:        db  "Hello, 64 bit world!", 10  ; "10" declares a new line
+message_len:    equ $ - message                 ; equal to the current position minus the message position
+
+
 section .text
 global _start
 
@@ -18,8 +28,3 @@ _print:
 
     mov         rax, 0                          ; set return code
     ret                                         ; return from the function
-
-section .data
-
-message:        db  "Hello, 64 bit world!", 10  ; "10" declares a new line
-message_len:    equ $ - message                 ; equal to the current position minus the message position
