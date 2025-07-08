@@ -9,9 +9,14 @@ section .text
 %define SYSCALL_SOCKET  41
 %define SYSCALL_EXIT    60
 
-global _start
+; Create a UNIX socket and connect to the X11 server
+; @returns Socket file descriptor
+connect_to_x11_server:
+static connect_to_x11_server:function
+    ; function prolog
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
 
-_start:
     ; open unix socket
     mov         rax, SYSCALL_SOCKET
     mov         rdi, AF_UNIX                    ; unix socket family
@@ -19,6 +24,25 @@ _start:
     mov         rdx, 0                          ; automatic protocol
     syscall
 
+    cmp         rax, 0
+    jle         exit_on_error
+
+    mov         rdi, rax                        ; store socket file descriptor in the rdi register
+
+    ; function epilog
+    pop rbp                                     ; retore base pointer
+    ret
+
+exit_on_error:
+    call connect_to_x11_server
+
+    ; exit program
+    mov         rax, SYSCALL_EXIT
+    mov         rdi, 1                          ; error code
+    syscall
+
+_start:
+global _start:function
     ; exit program
     mov         rax, SYSCALL_EXIT
     mov         rdi, 0                          ; error code
