@@ -69,12 +69,6 @@ static x11_connect_to_server:function
     pop         rbp                             ; restore base pointer
     ret
 
-exit_on_error:
-    ; exit program
-    mov         rax, SYSCALL_EXIT
-    mov         rdi, 1                          ; error code
-    syscall
-
 ; Send the handshake to the X11 server and read the returned system information
 ; @param rdi The socket file descriptor
 ; @returns The window root id (uint32_t) in rax
@@ -92,6 +86,12 @@ static x11_send_handshake:function
     add         rsp, 1<<15                      ; restore the stack
     pop         rbp                             ; restore base pointer
     ret
+
+exit_on_error:
+    ; exit program
+    mov         rax, SYSCALL_EXIT
+    mov         rdi, 1                          ; error code
+    syscall
 
 _start:
 global _start:function
