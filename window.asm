@@ -19,8 +19,8 @@ section .text
 
 ; Create a UNIX socket and connect to the X11 server
 ; @returns Socket file descriptor
-connect_to_x11_server:
-static connect_to_x11_server:function
+x11_connect_to_server:
+static x11_connect_to_server:function
     ; function prologue
     push        rbp                             ; push base pointer to the stack
     mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
@@ -70,8 +70,6 @@ static connect_to_x11_server:function
     ret
 
 exit_on_error:
-    call connect_to_x11_server
-
     ; exit program
     mov         rax, SYSCALL_EXIT
     mov         rdi, 1                          ; error code
@@ -97,7 +95,7 @@ static x11_send_handshake:function
 
 _start:
 global _start:function
-    call connect_to_x11_server
+    call x11_connect_to_server
 
     ; exit program
     mov         rax, SYSCALL_EXIT
