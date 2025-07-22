@@ -13,7 +13,7 @@ section .text
 ; @returns Socket file descriptor
 connect_to_x11_server:
 static connect_to_x11_server:function
-    ; function prolog
+    ; function prologue
     push        rbp                             ; push base pointer to the stack
     mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
 
@@ -29,7 +29,7 @@ static connect_to_x11_server:function
 
     mov         rdi, rax                        ; store socket file descriptor in the rdi register
 
-    ; function epilog
+    ; function epilogue
     pop rbp                                     ; retore base pointer
     ret
 
