@@ -12,6 +12,7 @@ section .text
 %define AF_UNIX             1
 %define SOCK_STREAM         1
 
+%define SYSCALL_WRITE       1
 %define SYSCALL_SOCKET      41
 %define SYSCALL_CONNECT     42
 %define SYSCALL_EXIT        60
@@ -75,6 +76,24 @@ exit_on_error:
     mov         rax, SYSCALL_EXIT
     mov         rdi, 1                          ; error code
     syscall
+
+; Send the handshake to the X11 server and read the returned system information
+; @param rdi The socket file descriptor
+; @returns The window root id (uint32_t) in rax
+x11_send_handshake:
+static x11_send_handshake:function
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    sub         rsp, 1<<15                      ; reserve space to store the system information on the stack
+
+
+
+    ; function epilogue
+    add         rsp, 1<<15                      ; restore the stack
+    pop         rbp                             ; restore base pointer
+    ret
 
 _start:
 global _start:function
