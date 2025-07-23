@@ -25,4 +25,4 @@ or you can compile it manually using the following commands
 
 ## Resources
 
-In order to get an X11 window running, the [this blog post]((https://gaultier.github.io/blog/x11_x64.html#2750592591-connecting-to-the-server)) from Philippe Gaultier was a huge help. 
+In order to get an X11 window running, the [this blog post](https://gaultier.github.io/blog/x11_x64.html#2750592591-connecting-to-the-server) from Philippe Gaultier was a huge help. 
