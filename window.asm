@@ -41,7 +41,7 @@ static x11_connect_to_server:function
     push        rbp                             ; push base pointer to the stack
     mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
 
-    ; open unix socket
+    ; open unix socket: socket(2)
     mov         rax, SYSCALL_SOCKET
     mov         rdi, AF_UNIX                    ; unix socket family
     mov         rsi, SOCK_STREAM                ; stream oriented type
@@ -65,7 +65,7 @@ static x11_connect_to_server:function
     mov         ecx, 19                         ; length of string is 19 with null terminator
     rep         movsb                           ; copy
 
-    ; connect to the server
+    ; connect to the server: connect(2)
     mov         rax, SYSCALL_CONNECT
     mov         rdi, r12                        ; restore the file descriptor to rdi
     lea         rsi, [rsp]
@@ -98,7 +98,7 @@ static x11_send_handshake:function
     mov         BYTE [rsp + 0], 'l'             ; set order to little-endian
     mov         WORD [rsp + 2], 11              ; set major version to 11
 
-    ; send the handshake to the x11 server
+    ; send the handshake to the x11 server: write(2)
     mov         rax, SYSCALL_WRITE
     mov         rdi, rdi
     lea         rsi, [rsp]
@@ -108,7 +108,7 @@ static x11_send_handshake:function
     cmp         rax, 12                         ; check if bytes were written
     jnz         exit_on_error
 
-    ; read the response of the server (8 bytes at first)
+    ; read the response of the server (8 bytes at first): read(2)
     ; use the stack for the read buffer
     mov         rax, SYSCALL_READ
     mov         rdi, rdi
@@ -122,7 +122,7 @@ static x11_send_handshake:function
     cmp         BYTE [rsp], 1                   ; check if the server succeeded (the first byte should be 1)
     jnz         exit_on_error
 
-    ; read the remaining response
+    ; read the remaining response: read(2)
     ; use the stack for the read buffer
     mov         rax, SYSCALL_READ
     mov         rdi, rdi
@@ -172,7 +172,7 @@ static x11_send_handshake:function
     ret
 
 exit_on_error:
-    ; exit program
+    ; exit program: exit(1)
     mov         rax, SYSCALL_EXIT
     mov         rdi, 1                          ; error code
     syscall
@@ -182,7 +182,7 @@ global _start:function
     call x11_connect_to_server
     call x11_send_handshake
 
-    ; exit program
+    ; exit program: exit(0)
     mov         rax, SYSCALL_EXIT
     mov         rdi, 0                          ; error code
     syscall
