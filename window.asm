@@ -379,7 +379,44 @@ exit_on_error:
 _start:
 global _start:function
     call x11_connect_to_server
+    mov         r15, rax                        ; store the file descriptor in r15
+
+    mov         rdi, rax
     call x11_send_handshake
+    mov         r12d, eax                       ; store the root id in r12
+
+    call x11_next_id
+    mov         r13d, eax                       ; store the gc_id in r13
+
+    call x11_next_id
+    mov         r14d, eax                       ; store the font_id in r13
+
+    call x11_next_id
+    mov         ebx, eax                        ; store the window id in ebx
+
+    mov         rdi, r15
+    mov         esi, r14d
+    call x11_open_font
+
+    mov         rdi, r15
+    mov         esi, r13d
+    mov         edx, r12d
+    mov         ecx, r14d
+    call x11_create_graphical_context
+
+    %define WINDOW_WIDTH    800
+    %define WINDOW_HEIGHT   600
+    mov         rdi, r15
+    mov         esi, ebx
+    mov         edx, r12d
+    mov         ecx, [root_visual_id]
+    mov         r8d, 200 | ( 200 << 16 )        ; set x and y to 200
+    mov         r9d, WINDOW_WIDTH | ( WINDOW_HEIGHT << 16 )
+    call x11_create_window
+
+    mov         rdi, r15
+    mov         esi, ebx
+    call x11_map_window
 
     ; exit program: exit(0)
     mov         rax, SYSCALL_EXIT
