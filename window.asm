@@ -338,6 +338,38 @@ static x11_create_window:function
     pop         rbp                             ; restore base pointer
     ret
 
+; map an x11 window
+; @param rdi The socket file descriptor
+; @param esi The window id
+x11_map_window:
+static x11_map_window:function
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    sub         rsp, 16                         ; reserve space for the message
+
+    %define X11_OP_REQ_MAP_WINDOW   0x08
+    
+    ; create message 
+    mov         DWORD [rsp + 0*4], X11_OP_REQ_MAP_WINDOW | ( 2 << 16 )
+    mov         DWORD [rsp + 1*4], esi
+
+    ; send message to the x11 server
+    mov         rax, SYSCALL_WRITE
+    mov         rdi, rdi
+    lea         rsi, [rsp]
+    mov         rdx, 2*4
+    syscall
+
+    cmp         rax, 2*4
+    jnz         exit_on_error
+
+    ; function epilogue
+    add         rsp, 16                         ; restore the stack
+    pop         rbp                             ; restore base pointer
+    ret
+
 exit_on_error:
     ; exit program: exit(1)
     mov         rax, SYSCALL_EXIT
