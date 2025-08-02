@@ -232,6 +232,56 @@ static x11_open_font:function
     jnz         exit_on_error
 
     ; function epilogue
+    add         rsp, 6*8                        ; restore the stack
+    pop         rbp                             ; restore base pointer
+    ret
+
+
+; Create a graphical context for x11
+; @param rdi The socket file descriptor
+; @param esi The graphical context id
+; @param edx The window root id
+; @param ecx The font id
+x11_create_graphical_context:
+static x11_create_graphical_context:function
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    sub         rsp, 8*8                        ; reserve space for the message
+
+    %define X11_OP_REQ_CREATE_GC        0x37
+    %define X11_FLAG_GC_BG              0x00000004
+    %define X11_FLAG_GC_FG              0x00000008
+    %define X11_FLAG_GC_FONT            0x00004000
+    %define X11_FLAG_GC_EXPOSE          0x00010000
+
+    %define CREATE_GC_FLAGS             X11_FLAG_GC_BG | X11_FLAG_GC_FG | X11_FLAG_GC_FONT
+    %define CREATE_GC_PACKET_FLAG_COUNT 3
+    %define CREATE_GC_PACKET_U32_COUNT  ( 4 + CREATE_GC_PACKET_FLAG_COUNT )
+    %define MY_RGB_COLOR                0x0000ffff
+
+    ; create graphical context message
+    mov     DWORD [rsp + 0*4], X11_OP_REQ_CREATE_GC | ( CREATE_GC_PACKET_U32_COUNT << 16 )
+    mov     DWORD [rsp + 1*4], esi
+    mov     DWORD [rsp + 2*4], edx
+    mov     DWORD [rsp + 3*4], CREATE_GC_FLAGS
+    mov     DWORD [rsp + 4*4], MY_RGB_COLOR
+    mov     DWORD [rsp + 5*4], 0
+    mov     DWORD [rsp + 6*4], ecx
+
+    ; send message to x11 server
+    mov     rax, SYSCALL_WRITE
+    mov     rdi, rdi
+    lea     rsi, [rsp]
+    mov     rdx, CREATE_GC_PACKET_U32_COUNT * 4
+    syscall
+    
+    cmp     rax, CREATE_GC_PACKET_U32_COUNT * 4
+    jnz     exit_on_error
+
+    ; function epilogue
+    add         rsp, 8*8                        ; restore the stack
     pop         rbp                             ; restore base pointer
     ret
 
