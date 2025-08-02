@@ -270,7 +270,7 @@ static x11_create_graphical_context:function
     mov     DWORD [rsp + 5*4], 0
     mov     DWORD [rsp + 6*4], ecx
 
-    ; send message to x11 server
+    ; send message to the x11 server
     mov     rax, SYSCALL_WRITE
     mov     rdi, rdi
     lea     rsi, [rsp]
@@ -282,6 +282,59 @@ static x11_create_graphical_context:function
 
     ; function epilogue
     add         rsp, 8*8                        ; restore the stack
+    pop         rbp                             ; restore base pointer
+    ret
+
+; create an x11 window
+; @param rdi The socket file descriptor
+; @param esi The new window id
+; @param edx The window root id
+; @param ecx The root visual id
+; @param r8d Packed window location (x and y)
+; @param r9d Packed window dimensions (width and height)
+x11_create_window:
+static x11_create_window:function
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    sub         rsp, 12*8                       ; reserve space for the message
+
+    %define X11_OP_REQ_CREATE_WINDOW        0x01
+    %define X11_FLAG_WIN_BG_COLOR           0x00000002
+    %define X11_EVENT_FLAG_KEY_RELEASE      0x0002
+    %define X11_EVENT_FLAG_EXPOSURE         0x8000
+    %define X11_FLAG_WIN_EVENT              0x00000800
+
+    %define CREATE_WINDOW_FLAG_COUNT        2
+    %define CREATE_WINDOW_PACKET_U32_COUNT  ( 8 + CREATE_WINDOW_FLAG_COUNT )
+    %define CREATE_WINDOW_BORDER            1
+    %define CREATE_WINDOW_GROUP             1
+
+    ; create window message
+    mov         DWORD [rsp + 0*4], X11_OP_REQ_CREATE_WINDOW | ( CREATE_WINDOW_PACKET_U32_COUNT << 16 )
+    mov         DWORD [rsp + 1*4], esi
+    mov         DWORD [rsp + 2*4], edx
+    mov         DWORD [rsp + 3*4], r8d
+    mov         DWORD [rsp + 4*4], r9d
+    mov         DWORD [rsp + 5*4], CREATE_WINDOW_GROUP | ( CREATE_WINDOW_BORDER << 16 )
+    mov         DWORD [rsp + 6*4], ecx
+    mov         DWORD [rsp + 7*4], X11_FLAG_WIN_BG_COLOR | X11_FLAG_WIN_EVENT
+    mov         DWORD [rsp + 8*4], 0
+    mov         DWORD [rsp + 9*4], X11_EVENT_FLAG_KEY_RELEASE | X11_EVENT_FLAG_EXPOSURE
+
+    ; send message to the x11 server
+    mov         rax, SYSCALL_WRITE
+    mov         rdi, rdi
+    lea         rsi, [rsp]
+    mov         rdx, CREATE_WINDOW_PACKET_U32_COUNT * 4
+    syscall
+
+    cmp         rax, CREATE_WINDOW_PACKET_U32_COUNT * 4
+    jnz         exit_on_error
+
+    ; function epilogue
+    add         rsp, 12*8                       ; restore the stack
     pop         rbp                             ; restore base pointer
     ret
 
