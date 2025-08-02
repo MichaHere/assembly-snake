@@ -193,6 +193,48 @@ static x11_next_id:function
     pop         rbp                             ; restore base pointer
     ret
 
+; open the font on the x11 server
+; @param rdi The socket file descriptor
+; @param esi The font id
+x11_open_font:
+static x11_open_font:function
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    %define OPEN_FONT_NAME_BYTE_COUNT       5
+    %define OPEN_FONT_PADDING               ( ( 4 - ( OPEN_FONT_NAME_BYTE_COUNT % 4 ) ) % 4 )
+    %define OPEN_FONT_PACKET_U32_COUNT      ( 3 + ( OPEN_FONT_NAME_BYTE_COUNT + OPEN_FONT_PADDING ) / 4 )
+    %define X11_OP_REQ_OPEN_FONT            0x2d
+
+    sub         rsp, 6*8                        ; reserve space for the message
+    
+    ; set font meta data
+    mov         DWORD   [rsp + 0*4], X11_OP_REQ_OPEN_FONT | ( OPEN_FONT_NAME_BYTE_COUNT << 16 )
+    mov         DWORD   [rsp + 1*4], esi
+    mov         DWORD   [rsp + 2*4], OPEN_FONT_NAME_BYTE_COUNT
+
+    ; set font name
+    mov         BYTE    [rsp + 3*4 + 0], 'f'
+    mov         BYTE    [rsp + 3*4 + 1], 'i'
+    mov         BYTE    [rsp + 3*4 + 2], 'x'
+    mov         BYTE    [rsp + 3*4 + 3], 'e'
+    mov         BYTE    [rsp + 3*4 + 4], 'd'
+
+    ; send font to the x11 server
+    mov         rax, SYSCALL_WRITE
+    mov         rdi, rdi
+    lea         rsi, [rsp]
+    mov         rdx, OPEN_FONT_PACKET_U32_COUNT * 4
+    syscall
+
+    cmp         rax, OPEN_FONT_PACKET_U32_COUNT * 4
+    jnz         exit_on_error
+
+    ; function epilogue
+    pop         rbp                             ; restore base pointer
+    ret
+
 exit_on_error:
     ; exit program: exit(1)
     mov         rax, SYSCALL_EXIT
