@@ -171,6 +171,28 @@ static x11_send_handshake:function
     pop         rbp                             ; restore base pointer
     ret
 
+; Increment the global id
+; @returns The new global id
+x11_next_id:
+static x11_next_id:function
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    mov         eax, DWORD [id]                 ; get the current global id
+    mov         edi, DWORD [id_base]            ; get the global id_base
+    mov         edx, DWORD [id_mask]            ; get the global id_mask
+
+    ; return id & id_mask | id_base
+    and         eax, edx                        ; store id & id_mask in eax
+    or          eax, edi                        ; store eax | id_base in eax
+
+    add         DWORD [id], 1                   ; increment the global id
+
+    ; function epilogue
+    pop         rbp                             ; restore base pointer
+    ret
+
 exit_on_error:
     ; exit program: exit(1)
     mov         rax, SYSCALL_EXIT
