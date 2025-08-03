@@ -411,6 +411,32 @@ static set_file_descriptor_non_blocking:function
     pop         rbp                             ; restore base pointer
     ret
 
+; read the x11 server response
+; @param rdi The file descriptor
+; @return The message code/event type in the al register
+x11_read_response:
+static x11_read_response:function
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    sub         rsp, 32                         ; reserve space for the response on the stack
+
+    mov         rax, SYSCALL_READ
+    mov         rdi, rdi
+    lea         rsi, [rsp]
+    mov         rdx, 32
+    syscall
+
+    cmp         rax, 0
+    jle         exit_on_error
+
+    mov         al, BYTE [rsp]
+
+    ; function epilogue
+    add         rsp, 32                         ; restore the stack
+    pop         rbp                             ; restore base pointer
+    ret
 
 exit_on_error:
     ; exit program: exit(1)
