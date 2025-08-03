@@ -32,6 +32,7 @@ section .text
 %define SYSCALL_SOCKET      41
 %define SYSCALL_CONNECT     42
 %define SYSCALL_EXIT        60
+%define SYSCALL_FCNTL       72
 
 ; create a UNIX socket and connect to the X11 server
 ; @returns Socket file descriptor
@@ -370,6 +371,47 @@ static x11_map_window:function
     pop         rbp                             ; restore base pointer
     ret
 
+; set a file descriptor in non-blocking mode
+; @param rdi The file descriptor
+set_file_descriptor_non_blocking:
+static set_file_descriptor_non_blocking:function
+    %define F_GETFL     3
+    %define F_SETFL     4
+    %define O_NONBLOCK  2048
+
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    ; get the file status flag
+    mov         rax, SYSCALL_FCNTL
+    mov         rdi, rdi
+    mov         rsi, F_GETFL
+    mov         rdx, 0
+    syscall
+
+    cmp         rax, 0
+    jl          exit_on_error
+
+    ; or the current file status flag
+    mov         rdx, rax
+    or          rdx, O_NONBLOCK
+
+    ; set the file descriptor mode
+    mov         rax, SYSCALL_FCNTL
+    mov         rdi, rdi
+    mov         rsi, F_SETFL
+    mov         rdx, rdx
+    syscall
+
+    cmp         rax, 0
+    jl          exit_on_error
+
+    ; function epilogue
+    pop         rbp                             ; restore base pointer
+    ret
+
+
 exit_on_error:
     ; exit program: exit(1)
     mov         rax, SYSCALL_EXIT
@@ -406,17 +448,23 @@ global _start:function
 
     %define WINDOW_WIDTH    800
     %define WINDOW_HEIGHT   600
+    %define WINDOW_X        200
+    %define WINDOW_Y        200
+
     mov         rdi, r15
     mov         esi, ebx
     mov         edx, r12d
     mov         ecx, [root_visual_id]
-    mov         r8d, 200 | ( 200 << 16 )        ; set x and y to 200
+    mov         r8d, WINDOW_X | ( WINDOW_Y << 16 )        ; set x and y to 200
     mov         r9d, WINDOW_WIDTH | ( WINDOW_HEIGHT << 16 )
     call x11_create_window
 
     mov         rdi, r15
     mov         esi, ebx
     call x11_map_window
+
+    mov         rdi, r15
+    call set_file_descriptor_non_blocking
 
     ; exit program: exit(0)
     mov         rax, SYSCALL_EXIT
