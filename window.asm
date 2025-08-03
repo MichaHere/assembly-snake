@@ -29,6 +29,7 @@ section .text
 
 %define SYSCALL_READ        0
 %define SYSCALL_WRITE       1
+%define SYSCALL_POLL        7
 %define SYSCALL_SOCKET      41
 %define SYSCALL_CONNECT     42
 %define SYSCALL_EXIT        60
@@ -438,6 +439,57 @@ static x11_read_response:function
     pop         rbp                             ; restore base pointer
     ret
 
+; poll messages from the x11 server indefinitely with poll(2)
+; @param rdi The socket file descriptor
+; @param esi The window id
+; @param edx The graphical context id
+poll_messages:
+static poll_messages:function
+    %define POLLIN      0x001
+    %define POLLPRI     0x002
+    %define POLLOUT     0x004
+    %define POLLERR     0x008
+    %define POLLHUP     0x010
+    %define POLLNVAL    0x020
+
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    sub         rsp, 32                         ; reserve space for the response on the stack
+
+    mov         DWORD [rsp + 0*4], edi
+    mov         DWORD [rsp + 1*4], POLLIN
+
+    mov         DWORD [rsp + 16], esi
+    mov         DWORD [rsp + 20], edx
+
+    .loop:
+        mov         rax, SYSCALL_POLL
+        lea         rdi, [rsp]
+        mov         rsi, 1
+        mov         rdx, -1
+        syscall
+
+        cmp         rax, 0
+        jle         exit_on_error
+
+        cmp         DWORD [rsp + 2*4], POLLERR
+        je          exit_on_error
+
+        cmp         DWORD [rsp + 2*4], POLLHUP
+        je          exit_on_error
+
+        mov         rdi, [rsp + 0*4]
+        call x11_read_response
+
+        jmp         .loop
+
+    ; function epilogue
+    add         rsp, 32                         ; restore the stack
+    pop         rbp                             ; restore base pointer
+    ret
+
 exit_on_error:
     ; exit program: exit(1)
     mov         rax, SYSCALL_EXIT
@@ -491,6 +543,11 @@ global _start:function
 
     mov         rdi, r15
     call set_file_descriptor_non_blocking
+
+    mov         rdi, r15
+    mov         esi, ebx
+    mov         edx, r13d
+    call poll_messages
 
     ; exit program: exit(0)
     mov         rax, SYSCALL_EXIT
