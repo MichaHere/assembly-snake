@@ -1,6 +1,12 @@
 BITS 64                                         ; use 64 bits
 CPU X64                                         ; target x86_64 CPU family
 
+section .rodata
+
+sun_path:   db "/tmp/.X11-unix/X1", 0
+static      sun_path:data
+
+
 section .data
 
 id:             dd 0
@@ -14,12 +20,6 @@ static          id_mask:data
 
 root_visual_id: dd 0
 static          root_visual_id:data
-
-
-section .rodata
-
-sun_path:   db "/tmp/.X11-unix/X1", 0
-static      sun_path:data
 
 
 section .text
@@ -59,7 +59,7 @@ static x11_connect_to_server:function
 
     mov         WORD [rsp], AF_UNIX             ; set sockaddr_un.sun_family to AF_UNIX
 
-    ; fill sockaddr_un.sun_path with "/tmp/.X11-unix/X0"
+    ; fill sockaddr_un.sun_path
     lea         rsi, sun_path                   ; load the address of the string to rsi
     mov         r12, rdi                        ; save the socket file descriptor from rdi in r12
     lea         rdi, [rsp + 2]
@@ -154,12 +154,12 @@ static x11_send_handshake:function
     imul        rax, 8                          ; multiply the number of formats by 8 (sizeof(format) == 8)
 
     add         rdi, 32                         ; skip over the connection setup
-    add         rdi, rcx                        ; skip over the vendor invormation (v)
 
     ; skip over the padding
     add         rdi, 3
-    add         rdi, -4
+    and         rdi, -4
 
+    add         rdi, rcx                        ; skip over the vendor invormation (v)
     add         rdi, rax                        ; skip over the format information (n*8)
 
     mov         eax, DWORD [rdi]                ; store and return the window root id
@@ -509,7 +509,8 @@ global _start:function
     mov         r13d, eax                       ; store the gc_id in r13
 
     call x11_next_id
-    mov         r14d, eax                       ; store the font_id in r13
+    mov         r14d, eax                       ; store the font_id in r14
+
 
     call x11_next_id
     mov         ebx, eax                        ; store the window id in ebx
@@ -524,8 +525,8 @@ global _start:function
     mov         ecx, r14d
     call x11_create_graphical_context
 
-    %define WINDOW_WIDTH    800
-    %define WINDOW_HEIGHT   600
+    %define WINDOW_WIDTH    1200
+    %define WINDOW_HEIGHT   800
     %define WINDOW_X        200
     %define WINDOW_Y        200
 
@@ -533,7 +534,7 @@ global _start:function
     mov         esi, ebx
     mov         edx, r12d
     mov         ecx, [root_visual_id]
-    mov         r8d, WINDOW_X | ( WINDOW_Y << 16 )        ; set x and y to 200
+    mov         r8d, WINDOW_X | ( WINDOW_Y << 16 )
     mov         r9d, WINDOW_WIDTH | ( WINDOW_HEIGHT << 16 )
     call x11_create_window
 
@@ -541,13 +542,19 @@ global _start:function
     mov         esi, ebx
     call x11_map_window
 
-    mov         rdi, r15
-    call set_file_descriptor_non_blocking
+    ; mov         rdi, r15
+    ; call set_file_descriptor_non_blocking
 
-    mov         rdi, r15
-    mov         esi, ebx
-    mov         edx, r13d
-    call poll_messages
+    ; mov         rdi, r15
+    ; mov         esi, ebx
+    ; mov         edx, r13d
+    ; call poll_messages
+
+    ; FIXME: Does not show a window???
+    push 10 ; wait for 10 seconds
+    mov rax, 35 ; sys_nanosleep
+    mov rdi, rsp
+    syscall 
 
     ; exit program: exit(0)
     mov         rax, SYSCALL_EXIT
