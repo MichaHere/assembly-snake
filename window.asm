@@ -542,19 +542,13 @@ global _start:function
     mov         esi, ebx
     call x11_map_window
 
-    ; mov         rdi, r15
-    ; call set_file_descriptor_non_blocking
+    mov         rdi, r15
+    call set_file_descriptor_non_blocking
 
-    ; mov         rdi, r15
-    ; mov         esi, ebx
-    ; mov         edx, r13d
-    ; call poll_messages
-
-    ; FIXME: Does not show a window???
-    push 10 ; wait for 10 seconds
-    mov rax, 35 ; sys_nanosleep
-    mov rdi, rsp
-    syscall 
+    mov         rdi, r15
+    mov         esi, ebx
+    mov         edx, r13d
+    call poll_messages
 
     ; exit program: exit(0)
     mov         rax, SYSCALL_EXIT
