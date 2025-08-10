@@ -439,6 +439,78 @@ static x11_read_response:function
     pop         rbp                             ; restore base pointer
     ret
 
+; draw text to the x11 window with server-side text rendering
+; @param rdi The socket file descriptor
+; @param rsi The text string
+; @param edx The string length in bytes
+; @param ecx The window id
+; @param r8d The graphical context id
+; @param r9d Packed text location (x and y)
+x11_draw_text:
+static x11_draw_text:function
+        ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    sub         rsp, 1024                       ; reserve space on the stack
+
+    mov         DWORD [rsp + 1*4], ecx          ; store window id in the packet data on the stack
+    mov         DWORD [rsp + 2*4], r8d          ; store the graphical context id in the packet data on the stack
+    mov         DWORD [rsp + 3*4], r9d          ; store the text location in the packet data on the stack
+
+    mov         r8d, edx                        ; move string length to r8 to free up edx
+
+    mov         QWORD [rsp + 1024 - 8], rdi     ; store the socket file descriptor at the end of the stack
+
+    ; Compute padding and packet u32 count with division and modulo 4
+    mov         eax, edi                        ; put string length in eax (the devidend)
+    mov         ecx, 4                          ; put devisor in ecx
+    cdq                                         ; sign extend
+    idiv        ecx                             ; compute eax / ecx and put the remainder in edx
+    
+    ; LLVM optimization: (4 - x) % 4 == -x & 3
+    neg         edx
+    and         edx, 3
+    mov         r9d, edx                        ; store padding in r9
+
+    mov         eax, r8d
+    add         eax, r9d
+    shr         eax, 2                          ; compute eax /= 4
+    add         eax, 4                          ; eax now contains the packet u32 count 
+
+    %define X11_OP_REQ_IMAGE_TEXT8 0x4c
+
+    mov         DWORD [rsp + 0*4],  r8d
+    shl         DWORD [rsp + 0*4], 8
+    or          DWORD [rsp + 0*4], X11_OP_REQ_IMAGE_TEXT8
+    mov         ecx, eax
+    shl         ecx, 16
+    or          [rsp + 0*4], ecx
+
+    ; copy the string in the packet data on the stack
+    mov         rsi, rsi                        ; the string
+    lea         rdi, [rsp + 4*4]                ; the destination
+    cld                                         ; move forward
+    mov         ecx, r8d                        ; the string length
+    rep movsb                                   ; copy
+
+
+    mov         rdx, rax                        ; packet u23 count
+    imul        rdx, 4
+
+    mov         rax, SYSCALL_WRITE
+    mov         rdi, QWORD [rsp + 1024 - 8]     ; the socket file descriptor
+    lea         rsi, [rsp]
+    syscall 
+
+    cmp         rax, rdx
+    jnz         exit_on_error
+
+    ; function epilogue
+    add         rsp, 1024                       ; restore the stack
+    pop         rbp                             ; restore base pointer
+    ret
+
 ; poll messages from the x11 server indefinitely with poll(2)
 ; @param rdi The socket file descriptor
 ; @param esi The window id
