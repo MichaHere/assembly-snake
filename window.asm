@@ -21,6 +21,12 @@ static          id_mask:data
 root_visual_id: dd 0
 static          root_visual_id:data
 
+message:        db  "Hello, world!"
+static message:data
+
+message_len:    equ $ - message                 ; equal to the current position minus the message position
+static message_len:data
+
 
 section .text
 
@@ -448,7 +454,7 @@ static x11_read_response:function
 ; @param r9d Packed text location (x and y)
 x11_draw_text:
 static x11_draw_text:function
-        ; function prologue
+    ; function prologue
     push        rbp                             ; push base pointer to the stack
     mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
 
@@ -463,7 +469,7 @@ static x11_draw_text:function
     mov         QWORD [rsp + 1024 - 8], rdi     ; store the socket file descriptor at the end of the stack
 
     ; Compute padding and packet u32 count with division and modulo 4
-    mov         eax, edi                        ; put string length in eax (the devidend)
+    mov         eax, edx                        ; put string length in eax (the devidend)
     mov         ecx, 4                          ; put devisor in ecx
     cdq                                         ; sign extend
     idiv        ecx                             ; compute eax / ecx and put the remainder in edx
@@ -554,6 +560,27 @@ static poll_messages:function
 
         mov         rdi, [rsp + 0*4]
         call x11_read_response
+
+        %define X11_EVENT_EXPOSURE 0xc
+
+        cmp         eax, X11_EVENT_EXPOSURE
+        jnz         .received_other_event
+
+        .received_exposed_event:
+            mov         BYTE [rsp + 24], 1              ; mark as exposed
+        
+        .received_other_event:
+            cmp         BYTE [rsp + 24], 1              ; check if exposed
+            jnz         .loop
+        
+        .draw_text:
+            mov         rdi, [rsp + 0*4]                ; socket file descriptor
+            lea         rsi, [message]                  ; string
+            mov         rdx, message_len                ; string length
+            mov         ecx, [rsp + 16]                 ; window id
+            mov         r8d, [rsp + 20]                 ; graphical context id
+            mov         r9d, 100 | ( 75 << 16 )         ; packed text location
+            call        x11_draw_text
 
         jmp         .loop
 
