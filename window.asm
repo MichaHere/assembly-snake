@@ -267,7 +267,7 @@ static x11_create_graphical_context:function
     %define CREATE_GC_FLAGS             X11_FLAG_GC_BG | X11_FLAG_GC_FG | X11_FLAG_GC_FONT
     %define CREATE_GC_PACKET_FLAG_COUNT 3
     %define CREATE_GC_PACKET_U32_COUNT  ( 4 + CREATE_GC_PACKET_FLAG_COUNT )
-    %define MY_RGB_COLOR                0x0000ffff
+    %define MY_RGB_COLOR                0xffffffff
 
     ; create graphical context message
     mov     DWORD [rsp + 0*4], X11_OP_REQ_CREATE_GC | ( CREATE_GC_PACKET_U32_COUNT << 16 )
