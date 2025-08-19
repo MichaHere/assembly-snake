@@ -517,6 +517,23 @@ static x11_draw_text:function
     pop         rbp                             ; restore base pointer
     ret
 
+
+; draw rectangle to the x11 window
+; @param rdi The socket file descriptor
+; @param rsi Packed rectangle location (x and y)
+; @param edx Packed rectangle dimensions (width and height)
+; @param ecx The window id
+; @param r8d The graphical context id
+x11_fill_rectangle:
+static x11_fill_rectangle:function
+    ; function prologue
+    push        rbp                             ; push base pointer to the stack
+    mov         rbp, rsp                        ; move the base pointer (rbp) to the current stack pointer (rsp)
+
+    ; function epilogue
+    pop         rbp                             ; restore base pointer
+    ret
+
 ; poll messages from the x11 server indefinitely with poll(2)
 ; @param rdi The socket file descriptor
 ; @param esi The window id
